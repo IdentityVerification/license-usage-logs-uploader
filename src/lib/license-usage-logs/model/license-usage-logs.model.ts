@@ -1,4 +1,3 @@
-
 type BlinkId = {
     readonly userId: string;
     readonly sdkVersion: string;
