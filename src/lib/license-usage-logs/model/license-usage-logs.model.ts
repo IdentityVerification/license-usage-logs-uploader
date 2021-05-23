@@ -2,7 +2,8 @@ type BlinkId = {
     readonly userId: string;
     readonly sdkVersion: string;
     readonly sdkPlatform: string;
-    readonly osDevice: string;
+    readonly osVersion: string;
+    readonly device: string;
     readonly licenseId: string;
     readonly licensee: string;
     readonly packageName: string;
@@ -12,20 +13,23 @@ type Verify = {
     readonly blinkIdVerifyServerVersion: string;
     readonly processId: string;
     readonly clientInstallationId: string;
-    readonly timestamp: string;
-    readonly method: string;
-    readonly methodResult: string;
-    readonly methodErrorReason: string;
+    readonly timestamp: number;
+    readonly event: string;
+    readonly eventData: string;
     readonly verificationSession: string;
-    readonly faceComponent: string;
+    readonly face: string;
     readonly blinkId: BlinkId;
-    readonly ref: string;
+    readonly ref: number;
     readonly signature: string;
 };
 
+type FaceTec = {
+    readonly data: string;
+}
+
 type Log = {
     readonly verify?: Verify;
-    readonly facetec?: string;
+    readonly facetec?: FaceTec;
 };
 
 export type LicenseUsageLogsRequestBody = {

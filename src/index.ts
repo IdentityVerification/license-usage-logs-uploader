@@ -1,18 +1,25 @@
+/* eslint-disable import/order */
+
 // export * from './lib/async';
 // export * from './lib/number';
-import * as fs from 'fs'
 
+import dotenv from 'dotenv'
+import * as fs from 'fs'
 import * as cron from 'node-cron'
+
+dotenv.config()
 
 import { parseFaceTecLogFileName, parseFaceTecLogFileNames } from './lib/license-usage-logs/helpers/facetec.helper'
 import * as state from './lib/license-usage-logs/helpers/state.helper'
+import { createLogs } from './lib/license-usage-logs/license-usage-logs-client'
+import { LicenseUsageLogsRequestBody } from './lib/license-usage-logs/model/license-usage-logs.model'
 // import { createLogs } from './lib/license-usage-logs/license-usage-logs-client'
 // import { LicenseUsageLogsRequestBody } from './lib/license-usage-logs/model/license-usage-logs.model'
 
 
-cron.schedule('* * * * * *', () => {
-  console.log('running a task every second 004');
-});
+// cron.schedule('* * * * * *', () => {
+//   console.log('running a task every second 004');
+// });
 
 /**
  * This script should be executed periodically, recommended once in a minute.
@@ -90,38 +97,40 @@ cron.schedule('* * * * * *', () => {
     // console.log('faceTecLogFileNames', faceTecLogFileNames)
 
 
-    // const licenseUsageLogsRequest: LicenseUsageLogsRequestBody = {
-    //   logs: [
-    //     {
-    //       verify: {
-    //         blinkIdVerifyServerVersion: "Excepteur ad nisi ipsum laborum",
-    //         processId: "enim aute Du",
-    //         clientInstallationId: "occ",
-    //         timestamp: "in nisi irure anim",
-    //         method: "ea veniam",
-    //         methodResult: "qui in eiusmod elit",
-    //         methodErrorReason: "anim Duis id culpa",
-    //         verificationSession: "occaecat consectetur eiusmod in",
-    //         faceComponent: "nulla occaecat incididunt",
-    //         blinkId: {
-    //           userId: "eiusmod sunt aliquip",
-    //           sdkVersion: "aliqua cillum sunt adipisicing",
-    //           sdkPlatform: "dolor ut fugiat in enim",
-    //           osDevice: "ut Ut occaecat elit",
-    //           licenseId: "tempor dolore exercitation",
-    //           licensee: "ms-018",
-    //           packageName: "adipis"
-    //         },
-    //         ref: "pariatur",
-    //         signature: "s"
-    //       },
-    //       facetec: "stepanic 018"
-    //     }
-    //   ]
-    // }
+    const licenseUsageLogsRequest: LicenseUsageLogsRequestBody = {
+      logs: [
+        {
+          verify: {
+            blinkIdVerifyServerVersion: "Excepteur ad nisi ipsum laborum",
+            processId: "enim aute Du",
+            clientInstallationId: "occ",
+            timestamp: 1621806135641,
+            event: "ea veniam",
+            eventData: "qui in eiusmod elit",
+            verificationSession: "occaecat consectetur eiusmod in",
+            face: "nulla occaecat incididunt",
+            blinkId: {
+              userId: "eiusmod sunt aliquip",
+              sdkVersion: "aliqua cillum sunt adipisicing",
+              sdkPlatform: "dolor ut fugiat in enim",
+              osVersion: "os version 001",
+              device: "ut Ut occaecat elit",
+              licenseId: "tempor dolore exercitation",
+              licensee: "ms-018",
+              packageName: "adipis"
+            },
+            ref: 1621806135641,
+            signature: "s"
+          },
+          facetec: {
+            data: "stepanic 018"
+          }
+        }
+      ]
+    }
 
-    // const createLogsResult = await createLogs(licenseUsageLogsRequest)
-    // console.log('createLogsResult', createLogsResult)
+    const createLogsResult = await createLogs(licenseUsageLogsRequest)
+    console.log('createLogsResult', createLogsResult)
 
   } catch(error) {
     console.error('top.level.error', error)

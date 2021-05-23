@@ -18,6 +18,8 @@ export const createLogs = async (body: LicenseUsageLogsRequestBody): Promise<Lic
     }
   };
 
+  console.log('config:AxiosRequestConfig', config)
+
 
   try {
     const url = new URL('/api/v1/log', LICENSE_USAGE_LOGS.BASE_URL)
