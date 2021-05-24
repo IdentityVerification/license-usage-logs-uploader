@@ -1,5 +1,6 @@
 import { LICENSE_USAGE_LOGS } from "../../config"
 
+import { getBlinkIdVerifyLogsForSync } from "./helpers/blinkid-verify.helper"
 import { getFaceTecLogsForSync } from "./helpers/facetec.helper"
 import * as state from './helpers/state.helper'
 import { createLogs } from "./license-usage-logs-client"
@@ -52,15 +53,17 @@ export const syncLicenseUsageLogs = async (
    console.log('')
 
    /**
-    * Get all FaceTec logs for sync with log's service
+    * Get all BlinkID Verify and FaceTec logs for sync with log's service
     */
+   const blinkIdVerifyLogsBatchForSync = await getBlinkIdVerifyLogsForSync(STATE, blinkIdVerifyLicenseUsageLogsDirPath)
    const faceTecLogsBatchForSync = await getFaceTecLogsForSync(STATE, facetecLicenseUsageLogsDirPath)
-
 
    /**
     * Sync to the log's service
     */
-   console.log('TOTAL.faceTectLogs.forSync')
+   console.log('TOTAL.blinkIdVerifyLogs.forSync')
+   console.log('blinkIdVerifyLogsBatchForSync.length', blinkIdVerifyLogsBatchForSync.length)
+   console.log('TOTAL.faceTecLogs.forSync')
    console.log('faceTecLogsBatchForSync.length', faceTecLogsBatchForSync.length)
    /**
     * Better CLI UI with nice separator
@@ -68,22 +71,20 @@ export const syncLicenseUsageLogs = async (
     console.log('----------------------------------------')
     console.log('')
 
-
-   // STATE.BLINKID_VERIFY_LAST_LOG_SENT = {
-   //   FILE_NAME: logFile.name,
-   //   FILE_SORTABLE_KEY: logFile.key,
-   //   LINE_NUMBER: 58
-   // }
-
+   /**
+    * Construct request body
+    */
    const licenseUsageLogsRequest: LicenseUsageLogsRequestBody = {
-     logs: faceTecLogsBatchForSync
+     logs: [ ...blinkIdVerifyLogsBatchForSync, ...faceTecLogsBatchForSync ]
    }
 
+   /**
+    * Show result from the log's service API
+    */
    const createLogsResult = await createLogs(licenseUsageLogsRequest)
    console.log('createLogsResult', createLogsResult)
    console.log('----------------------------------------')
    console.log('')
-
 
    /**
     * Store (persist) application state to the file for the next script run which will restore this state from the file.
