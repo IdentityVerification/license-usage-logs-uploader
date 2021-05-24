@@ -92,7 +92,7 @@ export const getFaceTecLogsForSync = async (
   facetecLicenseUsageLogsDirPath: string
 ) => {
   const logFileNames = fs.readdirSync(facetecLicenseUsageLogsDirPath)
-  console.log('logFileNames', logFileNames)
+  // console.log('logFileNames', logFileNames)
 
   const faceTecLogFileNames = parseFaceTecLogFileNames(logFileNames)
   console.log('faceTecLogFileNames', faceTecLogFileNames)
@@ -186,7 +186,6 @@ export const getFaceTecLogsForSync = async (
     // Update state
     STATE.FACETEC_LAST_LOG_SENT = {
       FILE_NAME: logFile.name,
-      FILE_SORTABLE_KEY: logFile.key,
       LINE_NUMBER: currentLineCounter
     }
 

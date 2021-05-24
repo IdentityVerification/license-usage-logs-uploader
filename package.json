@@ -45,6 +45,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "dotenv": "^10.0.0",
+    "json-sizeof": "^1.3.0",
     "nexline": "^1.2.2",
     "node-cron": "^3.0.0"
   },

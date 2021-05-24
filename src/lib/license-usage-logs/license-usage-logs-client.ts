@@ -2,6 +2,7 @@ import { URL } from 'url'
 
 import axios from 'axios'
 import { AxiosRequestConfig } from 'axios'
+import jsonSizeOf from 'json-sizeof'
 
 import { LICENSE_USAGE_LOGS } from '../../config'
 
@@ -18,12 +19,16 @@ export const createLogs = async (body: LicenseUsageLogsRequestBody): Promise<Lic
     }
   };
 
-  console.log('config:AxiosRequestConfig', config)
-
+  // console.log('config:AxiosRequestConfig', config)
 
   try {
     const url = new URL('/api/v1/log', LICENSE_USAGE_LOGS.BASE_URL)
     // console.log('url', url)
+
+    const bodySize = jsonSizeOf(body)
+    console.log('TOTAL.createLogs.body.size', bodySize, 'bytes')
+    console.log('----------------------------------------')
+    console.log('')
 
     const response = await axios.post(url.href, body, config)
     // console.log('response', response)
@@ -32,9 +37,9 @@ export const createLogs = async (body: LicenseUsageLogsRequestBody): Promise<Lic
     // console.log('response.status', status)
 
     // eslint-disable-next-line functional/no-let
-    let summary = 'Something went wrong!'
+    let summary = 'Something went wrong during license usage logs creation!'
     if (status === 201) {
-      summary = 'Logs created.'
+      summary = 'License Usage Logs are successfully created.'
     }
 
     const data = response?.data
@@ -46,7 +51,7 @@ export const createLogs = async (body: LicenseUsageLogsRequestBody): Promise<Lic
     }
 
   } catch (error) {
-    // console.error('error', error)
+    console.error('error', error)
 
     const status = error?.response?.status
     console.log('error.status', status)
