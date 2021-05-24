@@ -24,10 +24,11 @@ type Verify = {
 };
 
 type FaceTec = {
+    // RAW FaceTec Server log line wrapped as Base64 encoded string
     readonly data: string;
 }
 
-type Log = {
+export type Log = {
     readonly verify?: Verify;
     readonly facetec?: FaceTec;
 };
