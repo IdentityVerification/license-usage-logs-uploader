@@ -37,9 +37,9 @@ export const createLogs = async (body: LicenseUsageLogsRequestBody): Promise<Lic
     // console.log('response.status', status)
 
     // eslint-disable-next-line functional/no-let
-    let summary = 'Something went wrong during license usage logs creation!'
+    let summary = '❌ Something went wrong during license usage logs creation!'
     if (status === 201) {
-      summary = 'License Usage Logs are successfully created.'
+      summary = '✅ License Usage Logs are successfully created.'
     }
 
     const data = response?.data

@@ -95,7 +95,7 @@ export const getFaceTecLogsForSync = async (
   // console.log('logFileNames', logFileNames)
 
   const faceTecLogFileNames = parseFaceTecLogFileNames(logFileNames)
-  console.log('faceTecLogFileNames', faceTecLogFileNames)
+  // console.log('faceTecLogFileNames', faceTecLogFileNames)
 
   /**
    * Logs batch holder for sync
