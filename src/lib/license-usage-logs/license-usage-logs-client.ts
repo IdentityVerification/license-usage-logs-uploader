@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-let */
 import { URL } from 'url'
 
 import axios from 'axios'
@@ -12,10 +13,17 @@ export const createLogs = async (body: LicenseUsageLogsRequestBody): Promise<Lic
 
   // console.log('logs', licenseUsageLogsRequest)
 
+  let authorizationHeader = LICENSE_USAGE_LOGS.HEADERS.AUTHORIZATION
+  // NOTE: at Microblink Developer Hub Authorization is visible without `Basic ` prefix and to avoid issues when users just
+  // copy provided value and log uploader is not working this will prepend required prefix to construct Basic Auth header
+  if (!authorizationHeader?.startsWith('Basic ')) {
+    authorizationHeader = `Basic ${authorizationHeader}`
+  }
+
   const config: AxiosRequestConfig = {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': LICENSE_USAGE_LOGS.HEADERS.AUTHORIZATION
+      'Authorization': authorizationHeader
     }
   };
 
@@ -36,10 +44,9 @@ export const createLogs = async (body: LicenseUsageLogsRequestBody): Promise<Lic
     const status = response?.status
     // console.log('response.status', status)
 
-    // eslint-disable-next-line functional/no-let
-    let summary = '❌ Something went wrong during license usage logs creation!'
+    let summary = '🔴 Something went wrong during License Usage Logs creation!'
     if (status === 201) {
-      summary = '✅ License Usage Logs are successfully created.'
+      summary = '🟢 License Usage Logs are successfully created.'
     }
 
     const data = response?.data
@@ -51,7 +58,8 @@ export const createLogs = async (body: LicenseUsageLogsRequestBody): Promise<Lic
     }
 
   } catch (error) {
-    console.error('error', error)
+    // console.error('error', error)
+    console.error('error.response.data', error?.response?.data)
 
     const status = error?.response?.status
     console.log('error.status', status)

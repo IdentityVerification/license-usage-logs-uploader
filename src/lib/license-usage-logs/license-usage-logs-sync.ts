@@ -12,8 +12,8 @@ import { LicenseUsageLogsRequestBody } from "./model/license-usage-logs.model"
 export const syncLicenseUsageLogs = async (
 
 ) => {
-  console.log('MICROBLINK_LICENSE_USAGE_LOGS_UPLOADER_STARTED')
   console.log('----------------------------------------------')
+  console.log('MICROBLINK_LICENSE_USAGE_LOGS_UPLOADER_STARTED')
   console.log('----------------------------------------------')
   console.log('')
 
@@ -60,8 +60,8 @@ export const syncLicenseUsageLogs = async (
   /**
    * Get all BlinkID Verify and FaceTec logs for sync with log's service
    */
-  const blinkIdVerifyLogsBatchForSync = await getBlinkIdVerifyLogsForSync(STATE, blinkIdVerifyLicenseUsageLogsDirPath)
   const faceTecLogsBatchForSync = await getFaceTecLogsForSync(STATE, facetecLicenseUsageLogsDirPath)
+  const blinkIdVerifyLogsBatchForSync = await getBlinkIdVerifyLogsForSync(STATE, blinkIdVerifyLicenseUsageLogsDirPath)
 
   /**
    * Sync to the log's service
@@ -89,21 +89,25 @@ export const syncLicenseUsageLogs = async (
   if (licenseUsageLogsRequest?.logs?.length) {
     const createLogsResult = await createLogs(licenseUsageLogsRequest)
     console.log('createLogsResult', createLogsResult)
+
+    if (createLogsResult.status === 201) {
+
+      /**
+       * Store (persist) application state to the file for the next script run which will restore this state from the file.
+       */
+      state.save(STATE)
+      console.log('STATE.after', STATE)
+      console.log('----------------------------------------')
+      console.log('')
+    }
   } else {
-    console.log('❗ License Usage Logs Sync was skipped because Everything up-to-date')
+    console.log('🟠 License Usage Logs Sync skipped because everything is up-to-date.')
   }
   console.log('----------------------------------------')
   console.log('')
 
-  /**
-   * Store (persist) application state to the file for the next script run which will restore this state from the file.
-   */
-  state.save(STATE)
-  console.log('STATE.after', STATE)
-  console.log('----------------------------------------')
-  console.log('')
 
   console.log('-----------------------------------------------')
-  console.log('-----------------------------------------------')
   console.log('MICROBLINK_LICENSE_USAGE_LOGS_UPLOADER_FINISHED')
+  console.log('-----------------------------------------------')
 }

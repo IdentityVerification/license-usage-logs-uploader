@@ -21,10 +21,11 @@ import { Log } from "../model/license-usage-logs.model"
  * `facetec-usage-00602eff4c693d1e35cb693f6889696d-20210522.00001.log`
  * `facetec-usage-00602eff4c693d1e35cb693f6889696d-20210523.00002.log`
  *
+ * @param logFileDir is directory path of the log file
  * @param logFileName is filename as as string
  * @returns object
  */
-const parseFaceTecLogFileName = (logFileName: string) => {
+const parseFaceTecLogFileName = (logFileDir: string, logFileName: string) => {
 
   const segments = logFileName.split('.')
 
@@ -35,7 +36,16 @@ const parseFaceTecLogFileName = (logFileName: string) => {
   const date = parts[3]
   const seq  = segments[1]
 
-  const sortableKey  = `${date}.${seq}.${id}`
+  let sortableKey = ''
+  try {
+    const stat = fs.statSync(path.join(logFileDir, logFileName))
+
+    // BUG
+    // const sortableKey  = `${date}.${seq}.${id}`
+    sortableKey  = `${stat.birthtimeMs}`
+  } catch(err) {
+    // console.error(err)
+  }
 
   return {
     id, date, seq, key: sortableKey, name: logFileName
@@ -45,26 +55,30 @@ const parseFaceTecLogFileName = (logFileName: string) => {
 
 /**
  * Get sortable key from log filename
+ *
+ * @param logFileDir
  * @param logFileName
  * @returns
  */
-const getSortableKeyFromFileName = (logFileName: string) => {
-  return parseFaceTecLogFileName(logFileName)?.key
+const getSortableKeyFromFileName = (logFileDir: string, logFileName: string) => {
+  return parseFaceTecLogFileName(logFileDir, logFileName)?.key
 }
 
 /**
  * Take list of FaceTec Server log files filenames and parse them and sort them by sortable key (sort by creation date from the filename)
+ *
+ * @param logFilesDir is directory path of the log files
  * @param logFileNames are list of log files filenames
  * @returns object
  */
-const parseFaceTecLogFileNames = (logFileNames: readonly string[]) => {
+const parseFaceTecLogFileNames = (logFilesDir: string, logFileNames: readonly string[]) => {
 
   const logFilesKeys = []
   const logFiles = {}
 
   for (const logFileName of logFileNames) {
 
-    const faceTecLogFile = parseFaceTecLogFileName(logFileName)
+    const faceTecLogFile = parseFaceTecLogFileName(logFilesDir, logFileName)
 
     // console.log('logFileName', logFileName)
     // console.log('faceTecLogFile', faceTecLogFile)
@@ -94,7 +108,7 @@ export const getFaceTecLogsForSync = async (
   const logFileNames = fs.readdirSync(facetecLicenseUsageLogsDirPath)
   // console.log('logFileNames', logFileNames)
 
-  const faceTecLogFileNames = parseFaceTecLogFileNames(logFileNames)
+  const faceTecLogFileNames = parseFaceTecLogFileNames(facetecLicenseUsageLogsDirPath, logFileNames)
   // console.log('faceTecLogFileNames', faceTecLogFileNames)
 
   /**
@@ -115,7 +129,7 @@ export const getFaceTecLogsForSync = async (
     // Is state was successfully restored and valid
     if (facetecLastLogSent !== null) {
       // Skip all files with lower creation date (they should be already synced)
-      if (logFileSortableKey < getSortableKeyFromFileName(facetecLastLogSent.FILE_NAME)) {
+      if (logFileSortableKey < getSortableKeyFromFileName(facetecLicenseUsageLogsDirPath, facetecLastLogSent.FILE_NAME)) {
         console.log('SKIP.alreadySynced.file', faceTecLogFileNames.values[logFileSortableKey].name)
         /**
          * Better CLI UI with nice separator

@@ -6,6 +6,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
+import moment from 'moment'
 import nexline from 'nexline'
 
 import { Log } from "../model/license-usage-logs.model"
@@ -24,10 +25,11 @@ import { Log } from "../model/license-usage-logs.model"
  * `blinkid-verify-license-usage-20210522.4efa91e36fac432f813676c4e31558e7.00003.log`
  * `blinkid-verify-license-usage-20210523.4efa91e36fac432f813676c4e31558e7.00004.log`
  *
+ * @param logFileDir is directory path of the log file
  * @param logFileName is filename as as string
  * @returns object
  */
-const parseBlinkIdVerifyLogFileName = (logFileName: string) => {
+const parseBlinkIdVerifyLogFileName = (logFileDir: string, logFileName: string) => {
 
   const segments = logFileName.split('.')
 
@@ -39,7 +41,16 @@ const parseBlinkIdVerifyLogFileName = (logFileName: string) => {
   const id   = segments[1]
   const seq  = segments[2]
 
-  const sortableKey  = `${date}.${seq}.${id}`
+  let sortableKey = ''
+  try {
+    const stat = fs.statSync(path.join(logFileDir, logFileName))
+
+    // BUG
+    // const sortableKey  = `${date}.${seq}.${id}`
+    sortableKey  = `${stat.birthtimeMs}`
+  } catch(err) {
+    // console.error(err)
+  }
 
   return {
     id, date, seq, key: sortableKey, name: logFileName
@@ -49,26 +60,32 @@ const parseBlinkIdVerifyLogFileName = (logFileName: string) => {
 
 /**
  * Get sortable key from log filename
+ *
+ * @param logFileDir
  * @param logFileName
  * @returns
  */
-const getSortableKeyFromFileName = (logFileName: string) => {
-  return parseBlinkIdVerifyLogFileName(logFileName)?.key
+const getSortableKeyFromFileName = (logFileDir: string, logFileName: string) => {
+  return parseBlinkIdVerifyLogFileName(logFileDir, logFileName)?.key
 }
 
 /**
  * Take list of BlinkID Verify Server log files filenames and parse them and sort them by sortable key (sort by creation date from the filename)
+ *
+ * @param logFilesDir is directory path of the log files
  * @param logFileNames are list of log files filenames
  * @returns object
  */
-const parseBlinkIdVerifyLogFileNames = (logFileNames: readonly string[]) => {
+const parseBlinkIdVerifyLogFileNames = (logFilesDir: string, logFileNames: readonly string[]) => {
 
   const logFilesKeys = []
   const logFiles = {}
 
   for (const logFileName of logFileNames) {
 
-    const blinkIdVerifyLogFile = parseBlinkIdVerifyLogFileName(logFileName)
+    // console.log('logFileName', logFileName)
+
+    const blinkIdVerifyLogFile = parseBlinkIdVerifyLogFileName(logFilesDir, logFileName)
 
     // console.log('blinkIDVerifyLogFile', blinkIdVerifyLogFile)
     // console.log('')
@@ -104,7 +121,7 @@ export const getBlinkIdVerifyLogsForSync = async (
   /**
    * COnvert list of file paths to the structured objects
    */
-  const blinkIdVerifyLogFileNames = parseBlinkIdVerifyLogFileNames(logFileNames)
+  const blinkIdVerifyLogFileNames = parseBlinkIdVerifyLogFileNames(blinkIdVerifyLicenseUsageLogsDirPath, logFileNames)
   // console.log('blinkIdVerifyLogFileNames', blinkIdVerifyLogFileNames)
 
   /**
@@ -125,7 +142,7 @@ export const getBlinkIdVerifyLogsForSync = async (
     // Is state was successfully restored and valid
     if (blinkIdVerifyLastLogSent !== null) {
       // Skip all files with lower creation date (they should be already synced)
-      if (logFileSortableKey < getSortableKeyFromFileName(blinkIdVerifyLastLogSent.FILE_NAME)) {
+      if (logFileSortableKey < getSortableKeyFromFileName(blinkIdVerifyLicenseUsageLogsDirPath, blinkIdVerifyLastLogSent.FILE_NAME)) {
         console.log('SKIP.alreadySynced.file', blinkIdVerifyLogFileNames.values[logFileSortableKey].name)
         /**
          * Better CLI UI with nice separator
@@ -174,45 +191,52 @@ export const getBlinkIdVerifyLogsForSync = async (
       // Create log for sync
       syncedLineCounter += 1
 
-      console.log(line)
+      // console.log(line)
 
       // Parse line to JSON and create log object
       let logObj = null
       try {
-        logObj = JSON.parse(line)
-        console.log(logObj)
+        const logBoundaryStart = 'BIDVSLUL_' // short of: BlinkID Verify Server License Usage Log(s)
+        const logBoundaryEnd   = '_LULSVDIB' // reverse of starting boundary
+        logObj = JSON.parse(line.replace(logBoundaryStart, '').replace(logBoundaryEnd, ''))
+        // console.log(logObj)
       } catch (err) {
         console.error('blinkIdVerify.log.parse.error', err)
       }
 
-      // Construct log object for sync
-      const logForSync: Log = {
-        verify: {
-          blinkIdVerifyServerVersion: logObj?.blinkIdVerifyServerVersion,
-          processId: logObj?.processId,
-          clientInstallationId: logObj?.clientInstallationId,
-          timestamp: 1621806135641,
-          event: "ea veniam",
-          eventData: "qui in eiusmod elit",
-          verificationSession: "occaecat consectetur eiusmod in",
-          face: "nulla occaecat incididunt",
-          blinkId: {
-            userId: "eiusmod sunt aliquip",
-            sdkVersion: "aliqua cillum sunt adipisicing",
-            sdkPlatform: "dolor ut fugiat in enim",
-            osVersion: "os version 001",
-            device: "ut Ut occaecat elit",
-            licenseId: "tempor dolore exercitation",
-            licensee: "ms-018",
-            packageName: "adipis"
-          },
-          ref: 1621806135641,
-          signature: "s"
-        }
-      }
+      try {
 
-      // Append log to the batch for sync
-      logsBatchForSync.push(logForSync)
+        // Construct log object for sync
+        const logForSync: Log = {
+          verify: {
+            blinkIdVerifyServerVersion: logObj.serverVersion,
+            processId: logObj.serverProcessId,
+            clientInstallationId: logObj?.clientInstallationId,
+            timestamp: moment(logObj?.timestamp)?.valueOf(),
+            event: logObj.eventType,
+            eventData: logObj?.eventData,
+            verificationSession: logObj?.verificationSessionId,
+            face: logObj?.face,
+            blinkId: {
+              userId: logObj?.blinkId?.userId,
+              sdkVersion: logObj?.blinkId?.sdkVersion,
+              sdkPlatform: logObj?.blinkId?.sdkPlatform,
+              osVersion: logObj?.blinkId?.osVersion,
+              device: logObj?.blinkId?.device,
+              licenseId: logObj?.blinkId?.licenseId,
+              licensee: logObj?.blinkId?.licensee,
+              packageName: logObj?.blinkId?.packageName
+            },
+            ref: logObj?.ref ?? 0, // ref is null for first log in the log file, other logs are chained
+            signature: logObj.signature
+          }
+        }
+
+        // Append log to the batch for sync
+        logsBatchForSync.push(logForSync)
+      } catch(err) {
+        console.error('Error with log line: ', line)
+      }
     }
 
     // console.log('faceTec.logFile.name', logFile.name)
@@ -235,6 +259,6 @@ export const getBlinkIdVerifyLogsForSync = async (
 
   }
 
-  return []
+  return logsBatchForSync
 
 }
