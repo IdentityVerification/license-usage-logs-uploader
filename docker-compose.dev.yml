@@ -5,6 +5,7 @@ services:
     environment:
       - LICENSE_USAGE_LOGS_HEADERS_AUTHORIZATION=NGJlNmEyMzItZWRmOC00ZGI2LTlmNWUtMjAwNmJlYWRiMmM1OlR2Y25oeW95a2JTa1ZNTF9OUGVqZFhXVTN6diNIbDYweW9JMlN4LW8=
       - CRON_SCHEDULE=*/10 * * * * *
+      - LICENSE_USAGE_LOGS_BASE_URL=https://license-usage-logs.dev.microblink.com
     volumes:
       - /Users/stepanic/git/microblink/blinkid-verify-server/app/srv/blinkid-verify-license-usage-logs:/blinkid-verify-license-usage-logs
       - /Users/stepanic/git/microblink/blinkid-verify-server/app/srv/facetec-license-usage-logs:/facetec-license-usage-logs
