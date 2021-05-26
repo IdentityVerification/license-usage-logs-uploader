@@ -1,0 +1,7 @@
+version: '3.7'
+services:
+  microblink-license-usage-logs-uploader:
+    image: docker.microblink.com/license-usage-logs-uploader:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile

@@ -49,7 +49,7 @@ if (process.env.CRON_SCHEDULE) {
     isSyncInProgress = true
 
     try {
-      await syncLicenseUsageLogs()
+      await syncLicenseUsageLogs(currentSyncId)
     } catch(error) {
       console.error('cron.top.level.error', error)
     }
@@ -67,7 +67,7 @@ if (process.env.CRON_SCHEDULE) {
    */
   (async (): Promise<void> => {
     try {
-      await syncLicenseUsageLogs()
+      await syncLicenseUsageLogs(currentSyncId)
     } catch(error) {
       console.error('dev.top.level.error', error)
     }

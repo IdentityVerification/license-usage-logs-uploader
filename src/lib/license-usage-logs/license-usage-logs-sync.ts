@@ -10,10 +10,10 @@ import { LicenseUsageLogsRequestBody } from "./model/license-usage-logs.model"
  * Sync local license usage logs from the files to the service
  */
 export const syncLicenseUsageLogs = async (
-
+  syncId: number
 ) => {
   console.log('----------------------------------------------')
-  console.log('MICROBLINK_LICENSE_USAGE_LOGS_UPLOADER_STARTED')
+  console.log('MICROBLINK_LICENSE_USAGE_LOGS_UPLOADER_STARTED - syncId = ' + syncId)
   console.log('----------------------------------------------')
   console.log('')
 
@@ -31,6 +31,10 @@ export const syncLicenseUsageLogs = async (
    * `blinkid-verify-license-usage-20210523.4efa91e36fac432f813676c4e31558e7.00004.log`
    */
   const blinkIdVerifyLicenseUsageLogsDirPath = LICENSE_USAGE_LOGS.BLINKID_VERIFY.DIR_PATH
+  if (!blinkIdVerifyLicenseUsageLogsDirPath) {
+    console.error('LICENSE_USAGE_LOGS.BLINKID_VERIFY.DIR_PATH is required to be defined!')
+    return 1
+  }
 
   /**
    * Absolute path to the FaceTec Server License Usage Logs
@@ -45,7 +49,10 @@ export const syncLicenseUsageLogs = async (
    *
    */
   const facetecLicenseUsageLogsDirPath = LICENSE_USAGE_LOGS.FACETEC.DIR_PATH
-
+  if (!facetecLicenseUsageLogsDirPath) {
+    console.error('LICENSE_USAGE_LOGS.FACETEC.DIR_PATH is required to be defined!')
+    return 1
+  }
 
   /**
    * To correctly continue license usage logs uploading to the server, load application persistent state from the file.
@@ -108,6 +115,6 @@ export const syncLicenseUsageLogs = async (
 
 
   console.log('-----------------------------------------------')
-  console.log('MICROBLINK_LICENSE_USAGE_LOGS_UPLOADER_FINISHED')
+  console.log('MICROBLINK_LICENSE_USAGE_LOGS_UPLOADER_FINISHED - syncId = ' + syncId)
   console.log('-----------------------------------------------')
 }
