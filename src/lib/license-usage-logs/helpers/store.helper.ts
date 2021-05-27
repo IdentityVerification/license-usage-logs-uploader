@@ -7,6 +7,9 @@ export const read = (filePath: string) => {
     }
     return JSON.parse(fs.readFileSync(filePath, 'utf-8'))
   } catch (error) {
+    if (error.message === 'Unexpected end of JSON input') {
+      return {}
+    }
     console.error('store.read.error', error)
   }
   return {}

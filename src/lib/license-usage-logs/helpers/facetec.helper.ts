@@ -1,8 +1,7 @@
+/* eslint-disable functional/prefer-readonly-type */
 /* eslint-disable functional/immutable-data */
 /* eslint-disable functional/no-loop-statement */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable functional/no-let */
-/* eslint-disable functional/prefer-readonly-type */
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -36,32 +35,19 @@ const parseFaceTecLogFileName = (logFileDir: string, logFileName: string) => {
   const date = parts[3]
   const seq  = segments[1]
 
-  let sortableKey = ''
+  let createdAt: number
   try {
     const stat = fs.statSync(path.join(logFileDir, logFileName))
-
-    // BUG
-    // const sortableKey  = `${date}.${seq}.${id}`
-    sortableKey  = `${stat.birthtimeMs}`
+    createdAt  = stat.birthtimeMs
   } catch(err) {
     // console.error(err)
+    createdAt = 0
   }
 
   return {
-    id, date, seq, key: sortableKey, name: logFileName
+    id, date, seq, createdAt, name: logFileName
   }
 
-}
-
-/**
- * Get sortable key from log filename
- *
- * @param logFileDir
- * @param logFileName
- * @returns
- */
-const getSortableKeyFromFileName = (logFileDir: string, logFileName: string) => {
-  return parseFaceTecLogFileName(logFileDir, logFileName)?.key
 }
 
 /**
@@ -77,15 +63,9 @@ const parseFaceTecLogFileNames = (logFilesDir: string, logFileNames: readonly st
   const logFiles = {}
 
   for (const logFileName of logFileNames) {
-
     const faceTecLogFile = parseFaceTecLogFileName(logFilesDir, logFileName)
-
-    // console.log('logFileName', logFileName)
-    // console.log('faceTecLogFile', faceTecLogFile)
-    // console.log('')
-
-    logFilesKeys.push(faceTecLogFile.key)
-    logFiles[faceTecLogFile.key] = faceTecLogFile
+    logFilesKeys.push(faceTecLogFile.createdAt)
+    logFiles[faceTecLogFile.createdAt] = faceTecLogFile
   }
 
   logFilesKeys.sort()
@@ -105,52 +85,48 @@ export const getFaceTecLogsForSync = async (
   STATE: any,
   facetecLicenseUsageLogsDirPath: string
 ) => {
+
   let logFileNames = []
   try {
+    /**
+     * Read all FaceTec License Usage Logs files from the persistent source
+     */
     logFileNames = fs.readdirSync(facetecLicenseUsageLogsDirPath)
-    // console.log('logFileNames', logFileNames)
   } catch(err) {
     console.log(`🟠 FaceTec License Usage Logs Directory ${facetecLicenseUsageLogsDirPath} not exist and sync is skipped.`)
     console.log()
     return logFileNames
   }
 
+  /**
+   * Get all available FaceTec Server license usage logs files
+   */
   const faceTecLogFileNames = parseFaceTecLogFileNames(facetecLicenseUsageLogsDirPath, logFileNames)
-  // console.log('faceTecLogFileNames', faceTecLogFileNames)
+
+  /**
+   * Restore and init state if not defined
+   */
+  if (!STATE.FACETEC_LAST_LOGS_SENT) {
+    STATE.FACETEC_LAST_LOGS_SENT = {}
+  }
+  const facetecLastLogsSent: LicenseUsageLogsLastLogsSent = STATE.FACETEC_LAST_LOGS_SENT
 
   /**
    * Logs batch holder for sync
    */
   const logsBatchForSync: Log[] = []
 
-  let facetecLastLogSent: LicenseUsageLogsLastLogSent = null
-  // Is valid persisted state? Try to restore.
-  if (
-    STATE.FACETEC_LAST_LOG_SENT?.FILE_NAME &&
-    Number.isInteger(STATE.FACETEC_LAST_LOG_SENT?.LINE_NUMBER)
-  ) {
-    facetecLastLogSent = STATE.FACETEC_LAST_LOG_SENT
-  }
-  // Find next log for sync, seek to the file and line in a file
+  // Find next log for sync, seek to the line in a file
   for (const logFileSortableKey of faceTecLogFileNames.keys.sorted) {
-    // Is state was successfully restored and valid
-    if (facetecLastLogSent !== null) {
-      // Skip all files with lower creation date (they should be already synced)
-      if (logFileSortableKey < getSortableKeyFromFileName(facetecLicenseUsageLogsDirPath, facetecLastLogSent.FILE_NAME)) {
-        console.log('SKIP.alreadySynced.file', faceTecLogFileNames.values[logFileSortableKey].name)
-        /**
-         * Better CLI UI with nice separator
-         */
-        console.log('----------------------------------------')
-        console.log('')
-        continue;
-      }
-    }
 
-    // Get log file content
-    const logFile = faceTecLogFileNames.values[logFileSortableKey]
+    // Get log file structure
+    const logFileStructure = faceTecLogFileNames.values[logFileSortableKey]
 
-    const logFilePath = path.join(facetecLicenseUsageLogsDirPath, logFile.name)
+    // Get log file state
+    const logFileState = facetecLastLogsSent && facetecLastLogsSent[logFileStructure.name]
+
+    // Get file path on disk
+    const logFilePath = path.join(facetecLicenseUsageLogsDirPath, logFileStructure.name)
 
     /**
      * Read line by line with nexline lib
@@ -169,16 +145,22 @@ export const getFaceTecLogsForSync = async (
 
     // nexline is iterable
     for await (const line of nl) {
-      // console.log(line);
+
+      /**
+       * Skip empty lines
+       */
       if (!line?.length) {
         continue;
       }
+      /**
+       * Counter of the current line
+       */
       currentLineCounter += 1
 
-      // Try to seek in the last synced file, otherwise sync the whole file
-      if (logFile.name === facetecLastLogSent?.FILE_NAME) {
-        if (currentLineCounter <= facetecLastLogSent?.LINE_NUMBER) {
-          continue;
+      // Try to seek in the already synced file, otherwise sync the whole file
+      if (logFileStructure.name === logFileState?.FILE_NAME) {
+        if (currentLineCounter <= logFileState?.FILE_LINE_NUMBER) {
+          continue
         }
       }
 
@@ -196,18 +178,20 @@ export const getFaceTecLogsForSync = async (
       // Append log to the batch for sync
       logsBatchForSync.push(logForSync)
 
-    }
+    } // end - iterating log file per line
 
     // console.log('faceTec.logFile.name', logFile.name)
     if (syncedLineCounter < currentLineCounter) {
-      console.log('SKIP.alreadySynced.lines', facetecLastLogSent.LINE_NUMBER)
+      console.log('SKIP.alreadySynced.lines', logFileState?.FILE_LINE_NUMBER)
     }
     console.log('faceTec.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
 
     // Update state
-    STATE.FACETEC_LAST_LOG_SENT = {
-      FILE_NAME: logFile.name,
-      LINE_NUMBER: currentLineCounter
+    STATE.FACETEC_LAST_LOGS_SENT[logFileStructure.name] = {
+      FILE_NAME: logFileStructure.name,
+      FILE_LINE_NUMBER: currentLineCounter,
+      _FILE_CREATED_TIMESTAMP: parseFaceTecLogFileName(facetecLicenseUsageLogsDirPath, logFileStructure.name).createdAt,
+      _FILE_LINES_IN_LAST_SYNC: syncedLineCounter,
     }
 
     /**

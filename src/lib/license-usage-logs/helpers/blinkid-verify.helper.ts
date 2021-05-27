@@ -1,8 +1,7 @@
+/* eslint-disable functional/prefer-readonly-type */
 /* eslint-disable functional/immutable-data */
 /* eslint-disable functional/no-loop-statement */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable functional/no-let */
-/* eslint-disable functional/prefer-readonly-type */
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -41,32 +40,19 @@ const parseBlinkIdVerifyLogFileName = (logFileDir: string, logFileName: string) 
   const id   = segments[1]
   const seq  = segments[2]
 
-  let sortableKey = ''
+  let createdAt: number
   try {
     const stat = fs.statSync(path.join(logFileDir, logFileName))
-
-    // BUG
-    // const sortableKey  = `${date}.${seq}.${id}`
-    sortableKey  = `${stat.birthtimeMs}`
+    createdAt  = stat.birthtimeMs
   } catch(err) {
     // console.error(err)
+    createdAt = 0
   }
 
   return {
-    id, date, seq, key: sortableKey, name: logFileName
+    id, date, seq, createdAt, name: logFileName
   }
 
-}
-
-/**
- * Get sortable key from log filename
- *
- * @param logFileDir
- * @param logFileName
- * @returns
- */
-const getSortableKeyFromFileName = (logFileDir: string, logFileName: string) => {
-  return parseBlinkIdVerifyLogFileName(logFileDir, logFileName)?.key
 }
 
 /**
@@ -82,16 +68,9 @@ const parseBlinkIdVerifyLogFileNames = (logFilesDir: string, logFileNames: reado
   const logFiles = {}
 
   for (const logFileName of logFileNames) {
-
-    // console.log('logFileName', logFileName)
-
     const blinkIdVerifyLogFile = parseBlinkIdVerifyLogFileName(logFilesDir, logFileName)
-
-    // console.log('blinkIDVerifyLogFile', blinkIdVerifyLogFile)
-    // console.log('')
-
-    logFilesKeys.push(blinkIdVerifyLogFile.key)
-    logFiles[blinkIdVerifyLogFile.key] = blinkIdVerifyLogFile
+    logFilesKeys.push(blinkIdVerifyLogFile.createdAt)
+    logFiles[blinkIdVerifyLogFile.createdAt] = blinkIdVerifyLogFile
   }
 
   logFilesKeys.sort()
@@ -125,47 +104,35 @@ export const getBlinkIdVerifyLogsForSync = async (
     return logFileNames
   }
 
-
-
   /**
-   * COnvert list of file paths to the structured objects
+   * Convert list of file paths to the structured objects
    */
   const blinkIdVerifyLogFileNames = parseBlinkIdVerifyLogFileNames(blinkIdVerifyLicenseUsageLogsDirPath, logFileNames)
-  // console.log('blinkIdVerifyLogFileNames', blinkIdVerifyLogFileNames)
+
+  /**
+   * Restore and init state if not defined
+   */
+  if (!STATE.BLINKID_VERIFY_LAST_LOGS_SENT) {
+    STATE.BLINKID_VERIFY_LAST_LOGS_SENT = {}
+  }
+  const blinkIdVerifyLastLogsSent: LicenseUsageLogsLastLogsSent = STATE.BLINKID_VERIFY_LAST_LOGS_SENT
 
   /**
    * Logs batch holder for sync
    */
   const logsBatchForSync: Log[] = []
 
-  let blinkIdVerifyLastLogSent: LicenseUsageLogsLastLogSent = null
-  // Is valid persisted state? Try to restore.
-  if (
-    STATE.BLINKID_VERIFY_LAST_LOG_SENT?.FILE_NAME &&
-    Number.isInteger(STATE.BLINKID_VERIFY_LAST_LOG_SENT?.LINE_NUMBER)
-  ) {
-    blinkIdVerifyLastLogSent = STATE.BLINKID_VERIFY_LAST_LOG_SENT
-  }
   // Find next log for sync, seek to the file and line in a file
   for (const logFileSortableKey of blinkIdVerifyLogFileNames.keys.sorted) {
-    // Is state was successfully restored and valid
-    if (blinkIdVerifyLastLogSent !== null) {
-      // Skip all files with lower creation date (they should be already synced)
-      if (logFileSortableKey < getSortableKeyFromFileName(blinkIdVerifyLicenseUsageLogsDirPath, blinkIdVerifyLastLogSent.FILE_NAME)) {
-        console.log('SKIP.alreadySynced.file', blinkIdVerifyLogFileNames.values[logFileSortableKey].name)
-        /**
-         * Better CLI UI with nice separator
-         */
-        console.log('----------------------------------------')
-        console.log('')
-        continue;
-      }
-    }
 
-    // Get log file content
-    const logFile = blinkIdVerifyLogFileNames.values[logFileSortableKey]
+    // Get log file structure
+    const logFileStructure = blinkIdVerifyLogFileNames.values[logFileSortableKey]
 
-    const logFilePath = path.join(blinkIdVerifyLicenseUsageLogsDirPath, logFile.name)
+    // Get log file state
+    const logFileState = blinkIdVerifyLastLogsSent && blinkIdVerifyLastLogsSent[logFileStructure.name]
+
+    // Get file path on disk
+    const logFilePath = path.join(blinkIdVerifyLicenseUsageLogsDirPath, logFileStructure.name)
 
     /**
      * Read line by line with nexline lib
@@ -184,23 +151,27 @@ export const getBlinkIdVerifyLogsForSync = async (
 
     // nexline is iterable
     for await (const line of nl) {
-      // console.log(line);
+
+      /**
+       * Skip empty lines
+       */
       if (!line?.length) {
         continue;
       }
+      /**
+       * Counter of the current line
+       */
       currentLineCounter += 1
 
-      // Try to seek in the last synced file, otherwise sync the whole file
-      if (logFile.name === blinkIdVerifyLastLogSent?.FILE_NAME) {
-        if (currentLineCounter <= blinkIdVerifyLastLogSent?.LINE_NUMBER) {
+      // Try to seek in the already synced file, otherwise sync the whole file
+      if (logFileStructure.name === logFileState?.FILE_NAME) {
+        if (currentLineCounter <= logFileState?.FILE_LINE_NUMBER) {
           continue;
         }
       }
 
       // Create log for sync
       syncedLineCounter += 1
-
-      // console.log(line)
 
       // Parse line to JSON and create log object
       let logObj = null
@@ -250,14 +221,16 @@ export const getBlinkIdVerifyLogsForSync = async (
 
     // console.log('faceTec.logFile.name', logFile.name)
     if (syncedLineCounter < currentLineCounter) {
-      console.log('SKIP.alreadySynced.lines', blinkIdVerifyLastLogSent.LINE_NUMBER)
+      console.log('SKIP.alreadySynced.lines', logFileState.FILE_LINE_NUMBER)
     }
     console.log('blinkIdVerify.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
 
     // Update state
-    STATE.BLINKID_VERIFY_LAST_LOG_SENT = {
-      FILE_NAME: logFile.name,
-      LINE_NUMBER: currentLineCounter
+    STATE.BLINKID_VERIFY_LAST_LOGS_SENT[logFileStructure.name] = {
+      FILE_NAME: logFileStructure.name,
+      FILE_LINE_NUMBER: currentLineCounter,
+      _FILE_CREATED_TIMESTAMP: parseBlinkIdVerifyLogFileName(blinkIdVerifyLicenseUsageLogsDirPath, logFileStructure.name).createdAt,
+      _FILE_LINES_IN_LAST_SYNC: syncedLineCounter,
     }
 
     /**
@@ -269,5 +242,4 @@ export const getBlinkIdVerifyLogsForSync = async (
   }
 
   return logsBatchForSync
-
 }

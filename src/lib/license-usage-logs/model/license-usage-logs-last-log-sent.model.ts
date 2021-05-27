@@ -9,3 +9,7 @@ type LicenseUsageLogsLastLogSent = {
    */
   readonly LINE_NUMBER: number;
 }
+
+type LicenseUsageLogsLastLogsSent = {
+  readonly LOGS: readonly LicenseUsageLogsLastLogSent[]
+}

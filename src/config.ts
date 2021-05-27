@@ -8,5 +8,9 @@ export const LICENSE_USAGE_LOGS = {
   },
   BLINKID_VERIFY: {
     DIR_PATH: process.env.LICENSE_USAGE_LOGS_BLINKID_VERIFY_DIR_PATH
-  }
+  },
+  /**
+   * Archived log files will be skipped without opening and seeking for new log lines in them.
+   */
+  GREATER_THAN_HOW_MANY_SYNCS_UNCHANGED_LOG_FILE_IS_MARKED_AS_ARCHIVED: 100
 }

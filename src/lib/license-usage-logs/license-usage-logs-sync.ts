@@ -113,7 +113,6 @@ export const syncLicenseUsageLogs = async (
   console.log('----------------------------------------')
   console.log('')
 
-
   console.log('-----------------------------------------------')
   console.log('MICROBLINK_LICENSE_USAGE_LOGS_UPLOADER_FINISHED - syncId = ' + syncId)
   console.log('-----------------------------------------------')

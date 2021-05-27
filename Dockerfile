@@ -50,5 +50,6 @@ ENV NODE_ENV=$NODE_ENV
 ENV CRON_SCHEDULE="*/60 * * * * *"
 ENV LICENSE_USAGE_LOGS_BLINKID_VERIFY_DIR_PATH=/blinkid-verify-license-usage-logs
 ENV LICENSE_USAGE_LOGS_FACETEC_DIR_PATH=/facetec-license-usage-logs
+ENV PORT=8080
 
 CMD ["ts-node", "--transpile-only", "./src/index.ts"]

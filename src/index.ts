@@ -104,7 +104,7 @@ app.get('/health', (req, res) => {
     summary: 'microblink-license-usage-logs-uploader is operational',
     status: true,
     appName: 'microblink-license-usage-logs-uploader',
-    appVersion: '0.1.1',
+    appVersion: '0.3.0',
     appBuild: '2021-05-27',
     isSyncInProgress: isSyncInProgress,
     currentSyncId: (nextSyncId - 1) >= 0 ? nextSyncId - 1 : null,
