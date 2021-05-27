@@ -6,6 +6,8 @@
 
 import dotenv from 'dotenv'
 import cronstrue from 'cronstrue'
+import express from 'express';
+import moment from 'moment'
 
 import * as cron from 'node-cron'
 
@@ -31,7 +33,8 @@ const cronScheduleDisplayInfo = () => {
  */
 
 let isSyncInProgress = false
-let currentSyncId = 0
+let nextSyncId = 0
+const bootTime = moment()
 
 if (process.env.CRON_SCHEDULE) {
   cronScheduleDisplayInfo()
@@ -42,20 +45,21 @@ if (process.env.CRON_SCHEDULE) {
      * multiple syncs in parallel
      */
     if (isSyncInProgress) {
-      console.log('SKIPPED.sync.alreadyInProgress.syncId', currentSyncId)
+      console.log('SKIPPED.sync.alreadyInProgress.syncId', nextSyncId)
       return
     }
 
     isSyncInProgress = true
 
     try {
-      await syncLicenseUsageLogs(currentSyncId)
+      await syncLicenseUsageLogs(nextSyncId)
     } catch(error) {
       console.error('cron.top.level.error', error)
+      process.exit(1)
     }
 
     isSyncInProgress = false
-    currentSyncId += 1
+    nextSyncId += 1
 
     cronScheduleDisplayInfo()
 
@@ -67,12 +71,56 @@ if (process.env.CRON_SCHEDULE) {
    */
   (async (): Promise<void> => {
     try {
-      await syncLicenseUsageLogs(currentSyncId)
+      await syncLicenseUsageLogs(nextSyncId)
     } catch(error) {
       console.error('dev.top.level.error', error)
+      process.exit(1)
     }
+    if (app?.close) {
+      app?.close()
+    }
+    process.exit(0)
   })()
 }
+
+/**
+ * Simple web server for exposing health check endpoint
+ */
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send({
+    summary: 'Welcome to microblink-license-usage-logs-uploader'
+  });
+})
+
+app.get('/health', (req, res) => {
+
+  const now = moment()
+  const upTime = now.diff(bootTime, 'days') + ' days, ' + moment.utc(now.diff(bootTime)).format("HH:mm:ss")
+  const memoryUsage = process.memoryUsage().rss / 1024 / 1024 + ' MB'
+
+  res.send({
+    summary: 'microblink-license-usage-logs-uploader is operational',
+    status: true,
+    appName: 'microblink-license-usage-logs-uploader',
+    appVersion: '0.1.1',
+    appBuild: '2021-05-27',
+    isSyncInProgress: isSyncInProgress,
+    currentSyncId: (nextSyncId - 1) >= 0 ? nextSyncId - 1 : null,
+    nextSyncId: nextSyncId,
+    bootTime: bootTime.utc().format(),
+    upTime: upTime,
+    cronScheduleExpression: process.env.CRON_SCHEDULE,
+    cronScheduleDescription: cronstrue.toString(process.env.CRON_SCHEDULE),
+    memoryUsage: memoryUsage,
+  });
+})
+
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => {
+  console.log(`The application is listening on port ${PORT}!`);
+})
 
 
 
