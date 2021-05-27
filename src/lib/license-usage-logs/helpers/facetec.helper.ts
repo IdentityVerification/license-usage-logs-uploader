@@ -105,8 +105,15 @@ export const getFaceTecLogsForSync = async (
   STATE: any,
   facetecLicenseUsageLogsDirPath: string
 ) => {
-  const logFileNames = fs.readdirSync(facetecLicenseUsageLogsDirPath)
-  // console.log('logFileNames', logFileNames)
+  let logFileNames = []
+  try {
+    logFileNames = fs.readdirSync(facetecLicenseUsageLogsDirPath)
+    // console.log('logFileNames', logFileNames)
+  } catch(err) {
+    console.log(`🟠 FaceTec License Usage Logs Directory ${facetecLicenseUsageLogsDirPath} not exist and sync is skipped.`)
+    console.log()
+    return logFileNames
+  }
 
   const faceTecLogFileNames = parseFaceTecLogFileNames(facetecLicenseUsageLogsDirPath, logFileNames)
   // console.log('faceTecLogFileNames', faceTecLogFileNames)

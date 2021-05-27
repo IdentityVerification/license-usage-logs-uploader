@@ -112,11 +112,20 @@ export const getBlinkIdVerifyLogsForSync = async (
   blinkIdVerifyLicenseUsageLogsDirPath: string
 ) => {
 
-  /**
-   * Read all BlinkID Verify License Usage Logs files from the persistent source
-   */
-  const logFileNames = fs.readdirSync(blinkIdVerifyLicenseUsageLogsDirPath)
-  // console.log('logFileNames', logFileNames)
+  let logFileNames = []
+  try {
+    /**
+     * Read all BlinkID Verify License Usage Logs files from the persistent source
+     */
+    logFileNames = fs.readdirSync(blinkIdVerifyLicenseUsageLogsDirPath)
+    // console.log('logFileNames', logFileNames)
+  } catch(err) {
+    console.log(`🟠 BlinkID Verify Server License Usage Logs Directory ${blinkIdVerifyLicenseUsageLogsDirPath} not exist and sync is skipped.`)
+    console.log()
+    return logFileNames
+  }
+
+
 
   /**
    * COnvert list of file paths to the structured objects
