@@ -1,11 +1,11 @@
 {
-  "name": "microblink-license-usage-logs-client",
-  "version": "0.3.0",
+  "name": "microblink-license-usage-logs-uploader",
+  "version": "0.4.0",
   "description": "Microblink License Usage log's client for sending logs to the Microblink License Usage log's service",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
   "module": "build/module/index.js",
-  "repository": "https://github.com/stepanic/microblink-license-usage-logs-client",
+  "repository": "https://github.com/blinkid/license-usage-logs-uploader",
   "license": "MIT",
   "keywords": [],
   "scripts": {

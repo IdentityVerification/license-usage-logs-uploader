@@ -1,9 +1,6 @@
 /* eslint-disable functional/no-let */
 /* eslint-disable import/order */
 
-// export * from './lib/async';
-// export * from './lib/number';
-
 import dotenv from 'dotenv'
 import cronstrue from 'cronstrue'
 import express from 'express';
@@ -104,7 +101,7 @@ app.get('/health', (req, res) => {
     summary: 'microblink-license-usage-logs-uploader is operational',
     status: true,
     appName: 'microblink-license-usage-logs-uploader',
-    appVersion: '0.3.0',
+    appVersion: '0.4.0',
     appBuild: '2021-05-27',
     isSyncInProgress: isSyncInProgress,
     currentSyncId: (nextSyncId - 1) >= 0 ? nextSyncId - 1 : null,

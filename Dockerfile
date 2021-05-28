@@ -1,3 +1,4 @@
+
 ARG NODE_VERSION=14.17-alpine
 ARG NODE_ENV
 ARG BUILD_FLAG
@@ -6,6 +7,7 @@ ARG BUILD_FLAG
 
 # Builder with all NPM dependencies
 FROM node:${NODE_VERSION} AS builder
+LABEL maintainer="Matija Stepanic <matija.stepanic@microblink.com>" version="0.4.0"
 
 WORKDIR /app/builder
 COPY package.json package.json
