@@ -128,70 +128,87 @@ export const getFaceTecLogsForSync = async (
     // Get file path on disk
     const logFilePath = path.join(facetecLicenseUsageLogsDirPath, logFileStructure.name)
 
-    /**
-     * Read line by line with nexline lib
-     */
-    const nl: any = nexline({
-      input: fs.createReadStream(logFilePath),
-    });
+    try {
 
-    /**
-     * Init counters
-     */
-    let currentLineCounter = 0; // how many log lines read
-    let syncedLineCounter = 0;  // how many log lines will be prepared for sync, sync set should be subset of visited log lines
+      // Get file info
+      const stat = fs.lstatSync(logFilePath)
 
-    console.log('PREPARE.forSync.file', faceTecLogFileNames.values[logFileSortableKey].name)
+      if (stat.isFile()) {
 
-    // nexline is iterable
-    for await (const line of nl) {
+        /**
+         * Read line by line with nexline lib
+         */
+        const nl: any = nexline({
+          input: fs.createReadStream(logFilePath),
+        });
 
-      /**
-       * Skip empty lines
-       */
-      if (!line?.length) {
-        continue;
-      }
-      /**
-       * Counter of the current line
-       */
-      currentLineCounter += 1
+        /**
+         * Init counters
+         */
+        let currentLineCounter = 0; // how many log lines read
+        let syncedLineCounter = 0;  // how many log lines will be prepared for sync, sync set should be subset of visited log lines
 
-      // Try to seek in the already synced file, otherwise sync the whole file
-      if (logFileStructure.name === logFileState?.FILE_NAME) {
-        if (currentLineCounter <= logFileState?.FILE_LINE_NUMBER) {
-          continue
+        console.log('PREPARE.forSync.file', faceTecLogFileNames.values[logFileSortableKey].name)
+
+        try {
+          // nexline is iterable
+          for await (const line of nl) {
+
+            /**
+             * Skip empty lines
+             */
+            if (!line?.length) {
+              continue;
+            }
+            /**
+             * Counter of the current line
+             */
+            currentLineCounter += 1
+
+            // Try to seek in the already synced file, otherwise sync the whole file
+            if (logFileStructure.name === logFileState?.FILE_NAME) {
+              if (currentLineCounter <= logFileState?.FILE_LINE_NUMBER) {
+                continue
+              }
+            }
+
+            // Create log for sync
+            syncedLineCounter += 1
+
+            // Construct log object for sync
+            const logForSync: Log = {
+              facetec: {
+                // wrap RAW log line as encoded Base64 string
+                data: Buffer.from(line).toString('base64')
+              }
+            }
+
+            // Append log to the batch for sync
+            logsBatchForSync.push(logForSync)
+
+          } // end - iterating log file per line
+        } catch (error) {
+          console.error('PREPARE.forSync.facetec.error', error)
         }
-      }
 
-      // Create log for sync
-      syncedLineCounter += 1
-
-      // Construct log object for sync
-      const logForSync: Log = {
-        facetec: {
-          // wrap RAW log line as encoded Base64 string
-          data: Buffer.from(line).toString('base64')
+        // console.log('faceTec.logFile.name', logFile.name)
+        if (syncedLineCounter < currentLineCounter) {
+          console.log('SKIP.alreadySynced.lines', logFileState?.FILE_LINE_NUMBER)
         }
+        console.log('faceTec.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
+
+        // Update state
+        STATE.FACETEC_LAST_LOGS_SENT[logFileStructure.name] = {
+          FILE_NAME: logFileStructure.name,
+          FILE_LINE_NUMBER: currentLineCounter,
+          _FILE_CREATED_TIMESTAMP: parseFaceTecLogFileName(facetecLicenseUsageLogsDirPath, logFileStructure.name).createdAt,
+          _FILE_LINES_IN_LAST_SYNC: syncedLineCounter,
+        }
+
       }
 
-      // Append log to the batch for sync
-      logsBatchForSync.push(logForSync)
-
-    } // end - iterating log file per line
-
-    // console.log('faceTec.logFile.name', logFile.name)
-    if (syncedLineCounter < currentLineCounter) {
-      console.log('SKIP.alreadySynced.lines', logFileState?.FILE_LINE_NUMBER)
-    }
-    console.log('faceTec.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
-
-    // Update state
-    STATE.FACETEC_LAST_LOGS_SENT[logFileStructure.name] = {
-      FILE_NAME: logFileStructure.name,
-      FILE_LINE_NUMBER: currentLineCounter,
-      _FILE_CREATED_TIMESTAMP: parseFaceTecLogFileName(facetecLicenseUsageLogsDirPath, logFileStructure.name).createdAt,
-      _FILE_LINES_IN_LAST_SYNC: syncedLineCounter,
+    } catch(error) {
+      console.error('PREPARE.forSync.blinkid-verify.error', error)
     }
 
     /**

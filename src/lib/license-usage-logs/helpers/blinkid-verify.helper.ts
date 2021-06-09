@@ -134,103 +134,119 @@ export const getBlinkIdVerifyLogsForSync = async (
     // Get file path on disk
     const logFilePath = path.join(blinkIdVerifyLicenseUsageLogsDirPath, logFileStructure.name)
 
-    /**
-     * Read line by line with nexline lib
-     */
-    const nl: any = nexline({
-      input: fs.createReadStream(logFilePath),
-    });
+    try {
 
-    /**
-     * Init counters
-     */
-    let currentLineCounter = 0; // how many log lines read
-    let syncedLineCounter = 0;  // how many log lines will be prepared for sync, sync set should be subset of visited log lines
+      // Get file info
+      const stat = fs.lstatSync(logFilePath)
 
-    console.log('PREPARE.forSync.file', blinkIdVerifyLogFileNames.values[logFileSortableKey].name)
+      if (stat.isFile()) {
 
-    // nexline is iterable
-    for await (const line of nl) {
+        /**
+         * Read line by line with nexline lib
+         */
+        const nl: any = nexline({
+          input: fs.createReadStream(logFilePath),
+        });
 
-      /**
-       * Skip empty lines
-       */
-      if (!line?.length) {
-        continue;
-      }
-      /**
-       * Counter of the current line
-       */
-      currentLineCounter += 1
+        /**
+         * Init counters
+         */
+        let currentLineCounter = 0; // how many log lines read
+        let syncedLineCounter = 0;  // how many log lines will be prepared for sync, sync set should be subset of visited log lines
 
-      // Try to seek in the already synced file, otherwise sync the whole file
-      if (logFileStructure.name === logFileState?.FILE_NAME) {
-        if (currentLineCounter <= logFileState?.FILE_LINE_NUMBER) {
-          continue;
-        }
-      }
+        console.log('PREPARE.forSync.file', blinkIdVerifyLogFileNames.values[logFileSortableKey].name)
 
-      // Create log for sync
-      syncedLineCounter += 1
 
-      // Parse line to JSON and create log object
-      let logObj = null
-      try {
-        const logBoundaryStart = 'BIDVSLUL_' // short of: BlinkID Verify Server License Usage Log(s)
-        const logBoundaryEnd   = '_LULSVDIB' // reverse of starting boundary
-        logObj = JSON.parse(line.replace(logBoundaryStart, '').replace(logBoundaryEnd, ''))
-        // console.log(logObj)
-      } catch (err) {
-        console.error('blinkIdVerify.log.parse.error', err)
-      }
+        // nexline is iterable
+        for await (const line of nl) {
 
-      try {
+          /**
+           * Skip empty lines
+           */
+          if (!line?.length) {
+            continue;
+          }
+          /**
+           * Counter of the current line
+           */
+          currentLineCounter += 1
 
-        // Construct log object for sync
-        const logForSync: Log = {
-          verify: {
-            blinkIdVerifyServerVersion: logObj.serverVersion,
-            processId: logObj.serverProcessId,
-            clientInstallationId: logObj?.clientInstallationId,
-            timestamp: moment(logObj?.timestamp)?.valueOf(),
-            event: logObj.eventType,
-            eventData: logObj?.eventData,
-            verificationSession: logObj?.verificationSessionId,
-            face: logObj?.face,
-            blinkId: {
-              userId: logObj?.blinkId?.userId,
-              sdkVersion: logObj?.blinkId?.sdkVersion,
-              sdkPlatform: logObj?.blinkId?.sdkPlatform,
-              osVersion: logObj?.blinkId?.osVersion,
-              device: logObj?.blinkId?.device,
-              licenseId: logObj?.blinkId?.licenseId,
-              licensee: logObj?.blinkId?.licensee,
-              packageName: logObj?.blinkId?.packageName
-            },
-            ref: logObj?.ref ?? 0, // ref is null for first log in the log file, other logs are chained
-            signature: logObj.signature
+          // Try to seek in the already synced file, otherwise sync the whole file
+          if (logFileStructure.name === logFileState?.FILE_NAME) {
+            if (currentLineCounter <= logFileState?.FILE_LINE_NUMBER) {
+              continue;
+            }
+          }
+
+          // Create log for sync
+          syncedLineCounter += 1
+
+          // Parse line to JSON and create log object
+          let logObj = null
+          try {
+            const logBoundaryStart = 'BIDVSLUL_' // short of: BlinkID Verify Server License Usage Log(s)
+            const logBoundaryEnd   = '_LULSVDIB' // reverse of starting boundary
+            logObj = JSON.parse(line.replace(logBoundaryStart, '').replace(logBoundaryEnd, ''))
+            // console.log(logObj)
+          } catch (err) {
+            console.error('blinkIdVerify.log.parse.error', err)
+          }
+
+          try {
+
+            // Construct log object for sync
+            const logForSync: Log = {
+              verify: {
+                blinkIdVerifyServerVersion: logObj.serverVersion,
+                processId: logObj.serverProcessId,
+                clientInstallationId: logObj?.clientInstallationId,
+                timestamp: moment(logObj?.timestamp)?.valueOf(),
+                event: logObj.eventType,
+                eventData: logObj?.eventData,
+                verificationSession: logObj?.verificationSessionId,
+                face: logObj?.face,
+                blinkId: {
+                  userId: logObj?.blinkId?.userId,
+                  sdkVersion: logObj?.blinkId?.sdkVersion,
+                  sdkPlatform: logObj?.blinkId?.sdkPlatform,
+                  osVersion: logObj?.blinkId?.osVersion,
+                  device: logObj?.blinkId?.device,
+                  licenseId: logObj?.blinkId?.licenseId,
+                  licensee: logObj?.blinkId?.licensee,
+                  packageName: logObj?.blinkId?.packageName
+                },
+                ref: logObj?.ref ?? 0, // ref is null for first log in the log file, other logs are chained
+                signature: logObj.signature
+              }
+            }
+
+            // Append log to the batch for sync
+            logsBatchForSync.push(logForSync)
+          } catch(err) {
+            console.error('Error with log line: ', line)
           }
         }
 
-        // Append log to the batch for sync
-        logsBatchForSync.push(logForSync)
-      } catch(err) {
-        console.error('Error with log line: ', line)
+        console.log('DONE.sync.file', blinkIdVerifyLogFileNames.values[logFileSortableKey].name)
+
+        // console.log('faceTec.logFile.name', logFile.name)
+        if (syncedLineCounter < currentLineCounter) {
+          console.log('SKIP.alreadySynced.lines', logFileState.FILE_LINE_NUMBER)
+        }
+        console.log('blinkIdVerify.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
+
+        // Update state
+        STATE.BLINKID_VERIFY_LAST_LOGS_SENT[logFileStructure.name] = {
+          FILE_NAME: logFileStructure.name,
+          FILE_LINE_NUMBER: currentLineCounter,
+          _FILE_CREATED_TIMESTAMP: parseBlinkIdVerifyLogFileName(blinkIdVerifyLicenseUsageLogsDirPath, logFileStructure.name).createdAt,
+          _FILE_LINES_IN_LAST_SYNC: syncedLineCounter,
+        }
+
       }
-    }
 
-    // console.log('faceTec.logFile.name', logFile.name)
-    if (syncedLineCounter < currentLineCounter) {
-      console.log('SKIP.alreadySynced.lines', logFileState.FILE_LINE_NUMBER)
-    }
-    console.log('blinkIdVerify.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
-
-    // Update state
-    STATE.BLINKID_VERIFY_LAST_LOGS_SENT[logFileStructure.name] = {
-      FILE_NAME: logFileStructure.name,
-      FILE_LINE_NUMBER: currentLineCounter,
-      _FILE_CREATED_TIMESTAMP: parseBlinkIdVerifyLogFileName(blinkIdVerifyLicenseUsageLogsDirPath, logFileStructure.name).createdAt,
-      _FILE_LINES_IN_LAST_SYNC: syncedLineCounter,
+    } catch(error) {
+      console.error('PREPARE.forSync.blinkid-verify.error', error)
     }
 
     /**
