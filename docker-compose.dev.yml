@@ -9,5 +9,5 @@ services:
     ports:
       - 8085:8080
     volumes:
-      - /Users/stepanic/git/microblink/blinkid-verify-server/app/srv/blinkid-verify-license-usage-logs:/blinkid-verify-license-usage-logs
-      # - /Users/stepanic/git/microblink/blinkid-verify-server/app/srv/facetec-license-usage-logs:/facetec-license-usage-logs
+      - /var/microblink/blinkid-verify-server/app/srv/blinkid-verify-license-usage-logs:/blinkid-verify-license-usage-logs
+      - /var/microblink/blinkid-verify-server/app/srv/facetec-license-usage-logs:/facetec-license-usage-logs
