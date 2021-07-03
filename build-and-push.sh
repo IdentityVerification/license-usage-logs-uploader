@@ -18,7 +18,7 @@ else
 fi
 
 # Protected
-DOCKER_IMAGE_MICROBLINK="docker.microblink.com/license-usage-logs-uploader"
+DOCKER_IMAGE_MICROBLINK="docker.microblink.com/license-usage-logs-uploader-protected"
 
 if [ -z ${PROTECTED_RELEASE+x} ];
 then
