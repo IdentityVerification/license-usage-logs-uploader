@@ -7,7 +7,7 @@ ARG BUILD_FLAG
 
 # Builder with all NPM dependencies
 FROM node:${NODE_VERSION} AS builder
-LABEL maintainer="Matija Stepanic <matija.stepanic@microblink.com>" version="0.4.1"
+LABEL maintainer="Matija Stepanic <matija.stepanic@microblink.com>" version="0.4.2"
 
 WORKDIR /app/builder
 COPY package.json package.json

@@ -50,7 +50,7 @@ if (process.env.CRON_SCHEDULE) {
 
     try {
       await syncLicenseUsageLogs(nextSyncId)
-    } catch(error) {
+    } catch (error) {
       console.error('cron.top.level.error', error)
       process.exit(1)
     }
@@ -69,7 +69,7 @@ if (process.env.CRON_SCHEDULE) {
   (async (): Promise<void> => {
     try {
       await syncLicenseUsageLogs(nextSyncId)
-    } catch(error) {
+    } catch (error) {
       console.error('dev.top.level.error', error)
       process.exit(1)
     }
@@ -101,7 +101,7 @@ app.get('/health', (req, res) => {
     summary: 'microblink-license-usage-logs-uploader is operational',
     status: true,
     appName: 'microblink-license-usage-logs-uploader',
-    appVersion: '0.4.1',
+    appVersion: '0.4.2',
     appBuild: '2021-05-27',
     isSyncInProgress: isSyncInProgress,
     currentSyncId: (nextSyncId - 1) >= 0 ? nextSyncId - 1 : null,

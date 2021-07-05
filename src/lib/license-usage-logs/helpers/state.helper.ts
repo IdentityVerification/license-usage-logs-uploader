@@ -1,8 +1,10 @@
 import fs from 'fs'
 
+import { LICENSE_USAGE_LOGS } from '../../../config'
+
 import * as store from './store.helper'
 
-const STATE_DIR_PATH  = './state'
+const STATE_DIR_PATH = LICENSE_USAGE_LOGS.STATE.DIR_PATH ?? './state'
 const STATE_FILE_PATH = STATE_DIR_PATH + '/state.json'
 
 // ensure that state dir exists
