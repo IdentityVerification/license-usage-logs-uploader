@@ -27,3 +27,25 @@ Application is bundled as Docker Image for the easier deployment.
 ```bash
 PRIVATE_RELEASE=true PROTECTED_RELEASE=true PUBLIC_RELEASE=true SOURCE_PRIVATE_PUSH=true SOURCE_PUBLIC_PUSH=true ./build-and-push.sh
 ```
+
+
+### Configuration
+
+- `CRON_SCHEDULE` cron job definition when license usage logs uploader should be executed
+  - default: `*/60 * * * * *` 
+  - every minute
+
+- `LICENSE_USAGE_LOGS_STATE_DIR_PATH` directory where application state will be persisted, application state should be persisted between application deployment and it should be mounted from the shared volume, inside of that directory application will create `state.json` file which is state holder.
+  - default: `/app/state`
+
+- `LICENSE_USAGE_LOGS_BLINKID_VERIFY_DIR_PATH` directory in which are available BlinkID Verify Server Logs, logs should be mounted from the external directory by shared volume
+  - default: `/blinkid-verify-license-usage-logs`
+
+- `LICENSE_USAGE_LOGS_FACETEC_DIR_PATH` directory in which are available FaceTec Server Logs, logs should be mounted from the external directory by shared volume
+  - default: `/facetec-license-usage-logs`
+
+- `PORT` at which is application available at http protocol
+
+### Maintenance
+
+Application is primarily designed to works as script triggered periodically by cron job definition, but to check is it application alive and to get current state without tracing logs it is possible to ping endpoint `/health` which is health check endpoint. If that endpoint is not alive then whole container should be restarted from the outside.

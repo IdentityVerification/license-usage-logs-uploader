@@ -230,10 +230,12 @@ export const getBlinkIdVerifyLogsForSync = async (
         console.log('DONE.sync.file', blinkIdVerifyLogFileNames.values[logFileSortableKey].name)
 
         // console.log('faceTec.logFile.name', logFile.name)
-        if (syncedLineCounter < currentLineCounter) {
-          console.log('SKIP.alreadySynced.lines', logFileState.FILE_LINE_NUMBER)
+        if (process.env.CONSOLE_LOG_SYNCED_FILES === 'true' || syncedLineCounter > 0) {
+          if (syncedLineCounter < currentLineCounter) {
+            console.log('SKIP.alreadySynced.lines', logFileState.FILE_LINE_NUMBER)
+          }
+          console.log('blinkIdVerify.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
         }
-        console.log('blinkIdVerify.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
 
         // Update state
         STATE.BLINKID_VERIFY_LAST_LOGS_SENT[logFileStructure.name] = {

@@ -60,9 +60,11 @@ export const syncLicenseUsageLogs = async (
    * Every line is one log entity.
    */
   const STATE = state.load()
-  console.log('STATE.before', STATE)
-  console.log('----------------------------------------')
-  console.log('')
+  if (process.env.CONSOLE_LOG_STATE === 'true') {
+    console.log('STATE.before', STATE)
+    console.log('----------------------------------------')
+    console.log('')
+  }
 
   /**
    * Get all BlinkID Verify and FaceTec logs for sync with log's service
@@ -87,7 +89,7 @@ export const syncLicenseUsageLogs = async (
    * Construct request body
    */
   const licenseUsageLogsRequest: LicenseUsageLogsRequestBody = {
-    logs: [ ...blinkIdVerifyLogsBatchForSync, ...faceTecLogsBatchForSync ]
+    logs: [...blinkIdVerifyLogsBatchForSync, ...faceTecLogsBatchForSync]
   }
 
   /**
@@ -103,9 +105,11 @@ export const syncLicenseUsageLogs = async (
        * Store (persist) application state to the file for the next script run which will restore this state from the file.
        */
       state.save(STATE)
-      console.log('STATE.after', STATE)
-      console.log('----------------------------------------')
-      console.log('')
+      if (process.env.CONSOLE_LOG_STATE === 'true') {
+        console.log('STATE.after', STATE)
+        console.log('----------------------------------------')
+        console.log('')
+      }
     }
   } else {
     console.log('🟠 License Usage Logs Sync skipped because everything is up-to-date.')

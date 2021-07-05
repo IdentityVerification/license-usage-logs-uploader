@@ -192,10 +192,12 @@ export const getFaceTecLogsForSync = async (
         }
 
         // console.log('faceTec.logFile.name', logFile.name)
-        if (syncedLineCounter < currentLineCounter) {
-          console.log('SKIP.alreadySynced.lines', logFileState?.FILE_LINE_NUMBER)
+        if (process.env.CONSOLE_LOG_SYNCED_FILES === 'true' || syncedLineCounter > 0) {
+          if (syncedLineCounter < currentLineCounter) {
+            console.log('SKIP.alreadySynced.lines', logFileState?.FILE_LINE_NUMBER)
+          }
+          console.log('faceTec.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
         }
-        console.log('faceTec.lineCounter.forSync', syncedLineCounter, '/', currentLineCounter)
 
         // Update state
         STATE.FACETEC_LAST_LOGS_SENT[logFileStructure.name] = {
