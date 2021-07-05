@@ -1,6 +1,14 @@
 # microblink-license-usage-logs-uploader
 
-Microblink License Usage log's client for sending logs to the Microblink License Usage log's service
+Microblink License Usage log's client for sending logs to the Microblink License Usage log's service. This application is open-sourced and it could be modified by consulting the Microblink Support team with keeping requirements which are responsible for delivering BlinkID Verify Server and FaceTec Server license usage logs.  
+
+All logs will be delivered to the public service at https://license-usage-logs.microblink.com authorized with correct credentials of specific ingress source which should be created at Microblink Developer Hub https://license-usage-logs.microblink.com/ingress-source  
+
+To use application out-of-the-box as standalone "black box", please deploy it as Docker container from the prebuilt Docker image available publicly at [Docker Hub](https://hub.docker.com/r/microblink/license-usage-logs-uploader).
+
+## Source
+
+The application's source is available at https://github.com/BlinkID/license-usage-logs-uploader
 
 ## Docker
 
