@@ -37,15 +37,15 @@ const parseBlinkIdVerifyLogFileName = (logFileDir: string, logFileName: string) 
 
   const date = parts[4]
 
-  const id   = segments[1]
-  const seq  = segments[2]
+  const id = segments[1]
+  const seq = segments[2]
 
   let createdAt: number
   try {
     const stat = fs.statSync(path.join(logFileDir, logFileName))
-    createdAt  = stat.birthtimeMs
-  } catch(err) {
-    // console.error(err)
+    createdAt = stat.birthtimeMs || stat.ctimeMs
+  } catch (err) {
+    // console.error('parseBlinkIdVerifyLogFileName', err)
     createdAt = 0
   }
 
@@ -98,7 +98,7 @@ export const getBlinkIdVerifyLogsForSync = async (
      */
     logFileNames = fs.readdirSync(blinkIdVerifyLicenseUsageLogsDirPath)
     // console.log('logFileNames', logFileNames)
-  } catch(err) {
+  } catch (err) {
     console.log(`🟠 BlinkID Verify Server License Usage Logs Directory ${blinkIdVerifyLicenseUsageLogsDirPath} not exist and sync is skipped.`)
     console.log()
     return logFileNames
@@ -185,7 +185,7 @@ export const getBlinkIdVerifyLogsForSync = async (
           let logObj = null
           try {
             const logBoundaryStart = 'BIDVSLUL_' // short of: BlinkID Verify Server License Usage Log(s)
-            const logBoundaryEnd   = '_LULSVDIB' // reverse of starting boundary
+            const logBoundaryEnd = '_LULSVDIB' // reverse of starting boundary
             logObj = JSON.parse(line.replace(logBoundaryStart, '').replace(logBoundaryEnd, ''))
             // console.log(logObj)
           } catch (err) {
@@ -222,7 +222,7 @@ export const getBlinkIdVerifyLogsForSync = async (
 
             // Append log to the batch for sync
             logsBatchForSync.push(logForSync)
-          } catch(err) {
+          } catch (err) {
             console.error('Error with log line: ', line)
           }
         }
@@ -245,7 +245,7 @@ export const getBlinkIdVerifyLogsForSync = async (
 
       }
 
-    } catch(error) {
+    } catch (error) {
       console.error('PREPARE.forSync.blinkid-verify.error', error)
     }
 

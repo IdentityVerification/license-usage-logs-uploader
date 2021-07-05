@@ -9,6 +9,7 @@ const STATE_FILE_PATH = STATE_DIR_PATH + '/state.json'
 
 // ensure that state dir exists
 if (!fs.existsSync(STATE_DIR_PATH)) {
+  console.log('mkdir ' + STATE_DIR_PATH)
   fs.mkdirSync(STATE_DIR_PATH)
 }
 
@@ -18,5 +19,6 @@ export const save = (state: any) => {
 }
 
 export const load = () => {
+  console.log('store.read ' + STATE_FILE_PATH)
   return store.read(STATE_FILE_PATH)
 }

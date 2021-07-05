@@ -18,7 +18,9 @@ export const read = (filePath: string) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const write = (filePath: string, data: any) => {
   try {
+    console.log('store.write.before', filePath, data)
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2))
+    console.log('store.write.after', filePath, data)
   } catch (error) {
     console.error('store.write.error', error)
   }

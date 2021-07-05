@@ -31,15 +31,15 @@ const parseFaceTecLogFileName = (logFileDir: string, logFileName: string) => {
   const name = segments[0]
   const parts = name.split('-')
 
-  const id   = parts[2]
+  const id = parts[2]
   const date = parts[3]
-  const seq  = segments[1]
+  const seq = segments[1]
 
   let createdAt: number
   try {
     const stat = fs.statSync(path.join(logFileDir, logFileName))
-    createdAt  = stat.birthtimeMs
-  } catch(err) {
+    createdAt = stat.birthtimeMs || stat.ctimeMs
+  } catch (err) {
     // console.error(err)
     createdAt = 0
   }
@@ -92,7 +92,7 @@ export const getFaceTecLogsForSync = async (
      * Read all FaceTec License Usage Logs files from the persistent source
      */
     logFileNames = fs.readdirSync(facetecLicenseUsageLogsDirPath)
-  } catch(err) {
+  } catch (err) {
     console.log(`🟠 FaceTec License Usage Logs Directory ${facetecLicenseUsageLogsDirPath} not exist and sync is skipped.`)
     console.log()
     return logFileNames
@@ -207,7 +207,7 @@ export const getFaceTecLogsForSync = async (
 
       }
 
-    } catch(error) {
+    } catch (error) {
       console.error('PREPARE.forSync.blinkid-verify.error', error)
     }
 
